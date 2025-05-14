@@ -22,7 +22,6 @@ import {
 import "./MessengerChat.css"; // Custom Messenger style
 
 const AIAssistant = ({ userId, onSend, onSchedule }) => {
-  const [vehicle, setVehicle] = useState(null);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [chatLog, setChatLog] = useState([]);
@@ -33,6 +32,7 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
   const bottomRef = useRef(null);
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
+  // Auto-scroll to the latest message
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
@@ -45,7 +45,6 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
         const vehicleData = userSnap.exists() ? userSnap.data().vehicle || {} : {};
-        setVehicle(vehicleData);
 
         const systemPrompt = {
           role: "system",
@@ -62,7 +61,7 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
     };
 
     if (userId && apiKey) initAssistant();
-  }, [userId]);
+  }, [userId, apiKey]); // ✅ Properly added apiKey to dependencies
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -102,10 +101,10 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
       });
 
       if (reply.toLowerCase().includes("schedule") || reply.toLowerCase().includes("appointment")) {
-        const extractedReason = reply
-          .split("\n")
-          .find((line) => line.toLowerCase().includes("reason") || line.toLowerCase().includes("summary"))
-          || "Appointment requested via AI assistant";
+        const extractedReason =
+          reply.split("\n").find((line) =>
+            line.toLowerCase().includes("reason") || line.toLowerCase().includes("summary")
+          ) || "Appointment requested via AI assistant";
 
         setAppointment((prev) => ({ ...prev, reason: extractedReason }));
         setShowScheduleDialog(true);

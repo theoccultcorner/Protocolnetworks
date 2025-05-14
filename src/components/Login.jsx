@@ -7,7 +7,8 @@ import {
   MenuItem,
   Stack,
   Box,
-  Divider
+  Divider,
+  Alert
 } from "@mui/material";
 import {
   auth,
@@ -17,6 +18,7 @@ import {
   signInWithGoogle,
   getUserProfile
 } from "../firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -24,9 +26,11 @@ const Login = () => {
   const [role, setRole] = useState("customer");
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
     setLoading(true);
     try {
       if (isSignup) {
@@ -41,6 +45,7 @@ const Login = () => {
       }
     } catch (err) {
       console.error("🔴 Auth error:", err.message);
+      setMessage(err.message);
     } finally {
       setLoading(false);
     }
@@ -48,6 +53,7 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    setMessage("");
     try {
       const result = await signInWithGoogle();
       const { user } = result;
@@ -62,8 +68,23 @@ const Login = () => {
       }
     } catch (err) {
       console.error("🔴 Google sign-in error:", err.message);
+      setMessage(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setMessage("Please enter your email to reset your password.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setMessage("📩 A password reset link has been sent to your email.");
+    } catch (err) {
+      console.error("🔴 Reset error:", err.message);
+      setMessage(err.message);
     }
   };
 
@@ -73,13 +94,20 @@ const Login = () => {
         Protocol Networks
       </Typography>
       <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 3 }}>
-         Let's get you on the road.
+        Let's get you on the road.
       </Typography>
 
       <Paper sx={{ maxWidth: 400, mx: "auto", p: 4 }}>
         <Typography variant="h6" gutterBottom>
           {isSignup ? "Sign Up" : "Login"}
         </Typography>
+
+        {message && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {message}
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <TextField
@@ -95,6 +123,17 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+
+            {!isSignup && (
+              <Button
+                type="button"
+                onClick={handleForgotPassword}
+                sx={{ alignSelf: "flex-start", textTransform: "none", fontSize: 14 }}
+              >
+                Forgot password?
+              </Button>
+            )}
+
             {isSignup && (
               <TextField
                 label="Role"
@@ -107,15 +146,19 @@ const Login = () => {
                 <MenuItem value="mechanic">Mechanic</MenuItem>
               </TextField>
             )}
+
             <Button type="submit" variant="contained" disabled={loading}>
               {loading ? "Please wait..." : isSignup ? "Create Account" : "Login"}
             </Button>
-            <Button onClick={() => setIsSignup(!isSignup)}>
+
+            <Button type="button" onClick={() => setIsSignup(!isSignup)}>
               {isSignup
                 ? "Already have an account? Login"
                 : "Don't have an account? Sign up"}
             </Button>
+
             <Divider>or</Divider>
+
             <Button
               variant="outlined"
               onClick={handleGoogleSignIn}
