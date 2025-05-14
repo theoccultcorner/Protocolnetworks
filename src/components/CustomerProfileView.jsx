@@ -1,5 +1,3 @@
-// src/components/CustomerProfileView.jsx
-
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
@@ -19,7 +17,8 @@ import {
   Stack,
   Divider,
   TextField,
-  Button
+  Button,
+  Link
 } from "@mui/material";
 
 const getServiceRecommendations = (mileage) => {
@@ -153,8 +152,26 @@ const CustomerProfileView = () => {
 
         <Stack spacing={1} sx={{ mb: 2 }}>
           <Typography variant="subtitle1">Name: {name || "N/A"}</Typography>
-          <Typography variant="subtitle1">Email: {email || "N/A"}</Typography>
-          <Typography variant="subtitle1">Phone: {phone || "N/A"}</Typography>
+          <Typography variant="subtitle1">
+            Email:{" "}
+            {email ? (
+              <Link href={`mailto:${email}`} underline="hover">
+                {email}
+              </Link>
+            ) : (
+              "N/A"
+            )}
+          </Typography>
+          <Typography variant="subtitle1">
+            Phone:{" "}
+            {phone ? (
+              <Link href={`tel:${phone}`} underline="hover">
+                {phone}
+              </Link>
+            ) : (
+              "N/A"
+            )}
+          </Typography>
         </Stack>
 
         <Divider sx={{ my: 2 }} />

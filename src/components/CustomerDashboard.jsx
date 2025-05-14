@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -29,7 +28,6 @@ const CustomerDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
-  const [appointmentReason, setAppointmentReason] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
@@ -89,7 +87,6 @@ const CustomerDashboard = () => {
     if (!user?.uid) return;
     const updatedVehicle = { ...vehicle, issues: summary };
     setVehicle(updatedVehicle);
-    setAppointmentReason(summary);
     await setDoc(doc(db, "users", user.uid), { vehicle: updatedVehicle }, { merge: true });
   };
 
@@ -111,7 +108,6 @@ const CustomerDashboard = () => {
       const docRef = doc(db, "appointments", `${user.uid}-${Date.now()}`);
       await setDoc(docRef, apptData);
       setAppointments((prev) => [...prev, { id: docRef.id, ...apptData }]);
-      setAppointmentReason("");
     } catch (error) {
       console.error("❌ Error saving appointment:", error);
     }
