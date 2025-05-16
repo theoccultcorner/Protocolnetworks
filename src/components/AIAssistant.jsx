@@ -10,8 +10,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Box
+  Box,
+  useMediaQuery
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   db,
   doc,
@@ -31,6 +33,9 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
 
   const bottomRef = useRef(null);
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -134,41 +139,82 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
   };
 
   return (
-    <Paper sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-        AI Service Assistant
-      </Typography>
+    <>
+      <Paper
+        sx={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative"
+        }}
+      >
+        <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+          AI Service Assistant
+        </Typography>
 
-      <Box className="messenger-chat">
-        {chatLog.map((msg, i) => (
-          <div key={i} className={`message-row ${msg.role}`}>
-            <div className={`message ${msg.role}`}>
-              {msg.content}
+        <Box
+          className="messenger-chat"
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            padding: 2,
+            maxHeight: isMobile ? "45vh" : "auto"
+          }}
+        >
+          {chatLog.map((msg, i) => (
+            <div key={i} className={`message-row ${msg.role}`}>
+              <div className={`message ${msg.role}`}>
+                {msg.content}
+              </div>
             </div>
-          </div>
-        ))}
-        {loading && (
-          <Typography variant="body2" sx={{ px: 2, color: 'gray' }}>
-            Assistant is thinking...
-          </Typography>
-        )}
-        <div ref={bottomRef} />
-      </Box>
+          ))}
+          {loading && (
+            <Typography variant="body2" sx={{ px: 2, color: 'gray' }}>
+              Assistant is thinking...
+            </Typography>
+          )}
+          <div ref={bottomRef} />
+        </Box>
 
-      <Box className="chat-input-area">
-        <input
-          type="text"
-          placeholder="Describe your issue..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleSend()}
-        />
-        <button onClick={handleSend} disabled={loading}>
-          {loading ? "..." : "Send"}
-        </button>
-      </Box>
+        <Box
+          className="chat-input-area"
+          sx={{
+            display: "flex",
+            p: 1,
+            borderTop: "1px solid #ddd"
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Describe your issue..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+            style={{ flex: 1, padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={loading}
+            style={{
+              marginLeft: "10px",
+              padding: "10px 16px",
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px"
+            }}
+          >
+            {loading ? "..." : "Send"}
+          </button>
+        </Box>
+      </Paper>
 
-      <Dialog open={showScheduleDialog} onClose={() => setShowScheduleDialog(false)}>
+      <Dialog
+        open={showScheduleDialog}
+        onClose={() => setShowScheduleDialog(false)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Schedule Appointment</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -201,7 +247,7 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
           <Button variant="contained" onClick={handleScheduleConfirm}>Confirm</Button>
         </DialogActions>
       </Dialog>
-    </Paper>
+    </>
   );
 };
 
