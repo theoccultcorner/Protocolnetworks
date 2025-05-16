@@ -6,17 +6,10 @@ import {
   Button,
   Paper,
   Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Box,
-  IconButton,
   useMediaQuery
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import CloseIcon from "@mui/icons-material/Close";
-import ChatIcon from "@mui/icons-material/Chat";
 import {
   db,
   doc,
@@ -31,9 +24,8 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
   const [messages, setMessages] = useState([]);
   const [chatLog, setChatLog] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [appointment, setAppointment] = useState({ date: "", time: "", reason: "" });
-  const [showChat, setShowChat] = useState(false);
+  const [view, setView] = useState("assistant"); // 'assistant' or 'schedule'
 
   const bottomRef = useRef(null);
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
@@ -117,7 +109,7 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
           ) || "Appointment requested via AI assistant";
 
         setAppointment((prev) => ({ ...prev, reason: extractedReason }));
-        setShowScheduleDialog(true);
+        setView("schedule");
       }
 
       if (reply.toLowerCase().includes("summary") || reply.toLowerCase().includes("send to the mechanic")) {
@@ -138,66 +130,67 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
         reason: appointment.reason
       });
     }
-    setShowScheduleDialog(false);
     setAppointment({ date: "", time: "", reason: "" });
+    setView("assistant");
   };
 
   return (
-    <>
-      {/* Toggle Button for Chat Assistant */}
-      {!showChat ? (
-        <Box sx={{ textAlign: "right", p: 1 }}>
-          <Button
-            variant="contained"
-            startIcon={<ChatIcon />}
-            onClick={() => setShowChat(true)}
-          >
-            Open Assistant
-          </Button>
-        </Box>
-      ) : (
-        <Paper
+    <Paper
+      sx={{
+        width: "100%",
+        maxWidth: "600px",
+        mx: "auto",
+        height: isMobile ? "95vh" : "80vh",
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: 2,
+        overflow: "hidden"
+      }}
+    >
+      {/* Top Nav Buttons */}
+      <Box sx={{ display: "flex", borderBottom: "1px solid #ccc" }}>
+        <Button
+          onClick={() => setView("assistant")}
           sx={{
-            height: isMobile ? "60vh" : "500px",
-            display: "flex",
-            flexDirection: "column",
-            position: "relative",
-            mb: 2
+            flex: 1,
+            borderRadius: 0,
+            backgroundColor: view === "assistant" ? "#1976d2" : "#f0f0f0",
+            color: view === "assistant" ? "#fff" : "#000"
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              px: 2,
-              pt: 2
-            }}
-          >
-            <Typography variant="h6">AI Service Assistant</Typography>
-            <IconButton onClick={() => setShowChat(false)}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
+          Assistant
+        </Button>
+        <Button
+          onClick={() => setView("schedule")}
+          sx={{
+            flex: 1,
+            borderRadius: 0,
+            backgroundColor: view === "schedule" ? "#1976d2" : "#f0f0f0",
+            color: view === "schedule" ? "#fff" : "#000"
+          }}
+        >
+          Schedule
+        </Button>
+      </Box>
 
+      {/* ASSISTANT VIEW */}
+      {view === "assistant" && (
+        <>
           <Box
             className="messenger-chat"
             sx={{
               flex: 1,
               overflowY: "auto",
-              padding: 2,
-              maxHeight: isMobile ? "40vh" : "auto"
+              p: 2
             }}
           >
             {chatLog.map((msg, i) => (
               <div key={i} className={`message-row ${msg.role}`}>
-                <div className={`message ${msg.role}`}>
-                  {msg.content}
-                </div>
+                <div className={`message ${msg.role}`}>{msg.content}</div>
               </div>
             ))}
             {loading && (
-              <Typography variant="body2" sx={{ px: 2, color: 'gray' }}>
+              <Typography variant="body2" sx={{ color: "gray" }}>
                 Assistant is thinking...
               </Typography>
             )}
@@ -209,7 +202,7 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
             sx={{
               display: "flex",
               p: 1,
-              borderTop: "1px solid #ddd"
+              borderTop: "1px solid #ccc"
             }}
           >
             <input
@@ -218,7 +211,12 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
-              style={{ flex: 1, padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "5px",
+                border: "1px solid #ccc"
+              }}
             />
             <button
               onClick={handleSend}
@@ -235,25 +233,21 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
               {loading ? "..." : "Send"}
             </button>
           </Box>
-        </Paper>
+        </>
       )}
 
-      {/* Appointment Dialog (Independent of chat) */}
-      <Dialog
-        open={showScheduleDialog}
-        onClose={() => setShowScheduleDialog(false)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Schedule Appointment</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+      {/* SCHEDULE VIEW */}
+      {view === "schedule" && (
+        <Box sx={{ flex: 1, p: 2, overflowY: "auto" }}>
+          <Stack spacing={2}>
             <TextField
               type="date"
               label="Date"
               InputLabelProps={{ shrink: true }}
               value={appointment.date}
-              onChange={(e) => setAppointment({ ...appointment, date: e.target.value })}
+              onChange={(e) =>
+                setAppointment({ ...appointment, date: e.target.value })
+              }
               fullWidth
             />
             <TextField
@@ -261,23 +255,32 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
               label="Time"
               InputLabelProps={{ shrink: true }}
               value={appointment.time}
-              onChange={(e) => setAppointment({ ...appointment, time: e.target.value })}
+              onChange={(e) =>
+                setAppointment({ ...appointment, time: e.target.value })
+              }
               fullWidth
             />
             <TextField
               label="Reason"
               value={appointment.reason}
-              onChange={(e) => setAppointment({ ...appointment, reason: e.target.value })}
+              onChange={(e) =>
+                setAppointment({ ...appointment, reason: e.target.value })
+              }
               fullWidth
+              multiline
+              rows={3}
             />
+            <Button
+              variant="contained"
+              onClick={handleScheduleConfirm}
+              sx={{ mt: 2 }}
+            >
+              Confirm Appointment
+            </Button>
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowScheduleDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleScheduleConfirm}>Confirm</Button>
-        </DialogActions>
-      </Dialog>
-    </>
+        </Box>
+      )}
+    </Paper>
   );
 };
 
