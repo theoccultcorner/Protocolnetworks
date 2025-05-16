@@ -11,9 +11,12 @@ import {
   DialogContent,
   DialogActions,
   Box,
+  IconButton,
   useMediaQuery
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import CloseIcon from "@mui/icons-material/Close";
+import ChatIcon from "@mui/icons-material/Chat";
 import {
   db,
   doc,
@@ -30,6 +33,7 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
   const [loading, setLoading] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [appointment, setAppointment] = useState({ date: "", time: "", reason: "" });
+  const [showChat, setShowChat] = useState(false);
 
   const bottomRef = useRef(null);
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
@@ -140,75 +144,101 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
 
   return (
     <>
-      <Paper
-        sx={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          position: "relative"
-        }}
-      >
-        <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          AI Service Assistant
-        </Typography>
-
-        <Box
-          className="messenger-chat"
-          sx={{
-            flex: 1,
-            overflowY: "auto",
-            padding: 2,
-            maxHeight: isMobile ? "45vh" : "auto"
-          }}
-        >
-          {chatLog.map((msg, i) => (
-            <div key={i} className={`message-row ${msg.role}`}>
-              <div className={`message ${msg.role}`}>
-                {msg.content}
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <Typography variant="body2" sx={{ px: 2, color: 'gray' }}>
-              Assistant is thinking...
-            </Typography>
-          )}
-          <div ref={bottomRef} />
+      {/* Toggle Button for Chat Assistant */}
+      {!showChat ? (
+        <Box sx={{ textAlign: "right", p: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<ChatIcon />}
+            onClick={() => setShowChat(true)}
+          >
+            Open Assistant
+          </Button>
         </Box>
-
-        <Box
-          className="chat-input-area"
+      ) : (
+        <Paper
           sx={{
+            height: isMobile ? "60vh" : "500px",
             display: "flex",
-            p: 1,
-            borderTop: "1px solid #ddd"
+            flexDirection: "column",
+            position: "relative",
+            mb: 2
           }}
         >
-          <input
-            type="text"
-            placeholder="Describe your issue..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            style={{ flex: 1, padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
-          />
-          <button
-            onClick={handleSend}
-            disabled={loading}
-            style={{
-              marginLeft: "10px",
-              padding: "10px 16px",
-              backgroundColor: "#1976d2",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px"
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              px: 2,
+              pt: 2
             }}
           >
-            {loading ? "..." : "Send"}
-          </button>
-        </Box>
-      </Paper>
+            <Typography variant="h6">AI Service Assistant</Typography>
+            <IconButton onClick={() => setShowChat(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
 
+          <Box
+            className="messenger-chat"
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              padding: 2,
+              maxHeight: isMobile ? "40vh" : "auto"
+            }}
+          >
+            {chatLog.map((msg, i) => (
+              <div key={i} className={`message-row ${msg.role}`}>
+                <div className={`message ${msg.role}`}>
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <Typography variant="body2" sx={{ px: 2, color: 'gray' }}>
+                Assistant is thinking...
+              </Typography>
+            )}
+            <div ref={bottomRef} />
+          </Box>
+
+          <Box
+            className="chat-input-area"
+            sx={{
+              display: "flex",
+              p: 1,
+              borderTop: "1px solid #ddd"
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Describe your issue..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              style={{ flex: 1, padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={loading}
+              style={{
+                marginLeft: "10px",
+                padding: "10px 16px",
+                backgroundColor: "#1976d2",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px"
+              }}
+            >
+              {loading ? "..." : "Send"}
+            </button>
+          </Box>
+        </Paper>
+      )}
+
+      {/* Appointment Dialog (Independent of chat) */}
       <Dialog
         open={showScheduleDialog}
         onClose={() => setShowScheduleDialog(false)}
