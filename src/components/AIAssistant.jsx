@@ -19,7 +19,7 @@ import {
   collection,
   addDoc
 } from "../firebase";
-import "./MessengerChat.css"; // Custom Messenger style
+import "./MessengerChat.css";
 
 const AIAssistant = ({ userId, onSend, onSchedule }) => {
   const [input, setInput] = useState("");
@@ -32,7 +32,6 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
   const bottomRef = useRef(null);
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
-  // Auto-scroll to the latest message
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
@@ -48,9 +47,9 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
 
         const systemPrompt = {
           role: "system",
-          content: `You are a helpful AI assistant for an auto repair shop. 
-Ask customers to describe their car issues, suggest potential diagnostics, 
-and summarize their concern as a brief reason for an appointment. 
+          content: `You are a helpful AI assistant for an auto repair shop.
+Ask customers to describe their car issues, suggest potential diagnostics,
+and summarize their concern as a brief reason for an appointment.
 Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleData.model || ""}`
         };
 
@@ -61,7 +60,7 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
     };
 
     if (userId && apiKey) initAssistant();
-  }, [userId, apiKey]); // ✅ Properly added apiKey to dependencies
+  }, [userId, apiKey]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -88,7 +87,9 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
         }
       );
 
-      const reply = result.data.choices[0].message.content;
+      const reply =
+        result?.data?.choices?.[0]?.message?.content ||
+        "I'm sorry, I didn't catch that. Could you rephrase?";
       const aiMessage = { role: "assistant", content: reply };
       const combinedMessages = [...updatedMessages, aiMessage];
       setMessages(combinedMessages);
@@ -146,6 +147,11 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
             </div>
           </div>
         ))}
+        {loading && (
+          <Typography variant="body2" sx={{ px: 2, color: 'gray' }}>
+            Assistant is thinking...
+          </Typography>
+        )}
         <div ref={bottomRef} />
       </Box>
 
