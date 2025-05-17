@@ -50,7 +50,7 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
           role: "system",
           content: `You are a helpful AI assistant for an auto repair shop.
 Ask customers to describe their car issues, suggest potential diagnostics,
-and summarize their concern as a brief reason for an appointment.
+and summarize their concern to help them schedule an appointment.
 Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleData.model || ""}`
         };
 
@@ -102,17 +102,18 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
         ai: reply
       });
 
-      if (reply.toLowerCase().includes("schedule") || reply.toLowerCase().includes("appointment")) {
-        const extractedReason =
-          reply.split("\n").find((line) =>
-            line.toLowerCase().includes("reason") || line.toLowerCase().includes("summary")
-          ) || "Appointment requested via AI assistant";
-
-        setAppointment((prev) => ({ ...prev, reason: extractedReason }));
+      if (
+        reply.toLowerCase().includes("schedule") ||
+        reply.toLowerCase().includes("appointment")
+      ) {
+        // Switch to schedule view but don’t auto-fill the reason
         setView("schedule");
       }
 
-      if (reply.toLowerCase().includes("summary") || reply.toLowerCase().includes("send to the mechanic")) {
+      if (
+        reply.toLowerCase().includes("summary") ||
+        reply.toLowerCase().includes("send to the mechanic")
+      ) {
         onSend && onSend(reply);
       }
     } catch (err) {
@@ -181,7 +182,8 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
             sx={{
               flex: 1,
               overflowY: "auto",
-              p: 2
+              p: 2,
+              maxHeight: isMobile ? "45vh" : "auto"
             }}
           >
             {chatLog.map((msg, i) => (
@@ -261,7 +263,8 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
               fullWidth
             />
             <TextField
-              label="Reason"
+              label="Reason for Appointment"
+              placeholder="Describe what the appointment is for..."
               value={appointment.reason}
               onChange={(e) =>
                 setAppointment({ ...appointment, reason: e.target.value })
