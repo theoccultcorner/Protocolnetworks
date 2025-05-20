@@ -25,7 +25,7 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
   const [chatLog, setChatLog] = useState([]);
   const [loading, setLoading] = useState(false);
   const [appointment, setAppointment] = useState({ date: "", time: "", reason: "" });
-  const [view, setView] = useState("assistant"); // 'assistant' or 'schedule'
+  const [view, setView] = useState("assistant");
 
   const bottomRef = useRef(null);
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
@@ -50,7 +50,7 @@ const AIAssistant = ({ userId, onSend, onSchedule }) => {
           role: "system",
           content: `You are a helpful AI assistant for an auto repair shop.
 Ask customers to describe their car issues, suggest potential diagnostics,
-and summarize their concern to help them schedule an appointment.
+and let them know they can schedule an appointment. 
 Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleData.model || ""}`
         };
 
@@ -106,7 +106,7 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
         reply.toLowerCase().includes("schedule") ||
         reply.toLowerCase().includes("appointment")
       ) {
-        // Switch to schedule view but don’t auto-fill the reason
+        // Show schedule screen, but reason must be manually entered
         setView("schedule");
       }
 
@@ -124,7 +124,7 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
   };
 
   const handleScheduleConfirm = () => {
-    if (onSchedule && appointment.date && appointment.time) {
+    if (onSchedule && appointment.date && appointment.time && appointment.reason.trim()) {
       onSchedule({
         date: appointment.date,
         time: appointment.time,
@@ -277,6 +277,9 @@ Vehicle: ${vehicleData.year || "unknown"} ${vehicleData.make || ""} ${vehicleDat
               variant="contained"
               onClick={handleScheduleConfirm}
               sx={{ mt: 2 }}
+              disabled={
+                !appointment.date || !appointment.time || !appointment.reason.trim()
+              }
             >
               Confirm Appointment
             </Button>
