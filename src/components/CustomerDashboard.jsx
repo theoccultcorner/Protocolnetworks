@@ -190,18 +190,36 @@ const CustomerDashboard = () => {
         )}
       </Box>
 
-      <Box sx={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999 }}>
-        {chatOpen ? (
-          <Paper sx={{ width: 300, height: 400, display: "flex", flexDirection: "column", boxShadow: 6 }}>
-            <Box sx={{ p: 1, backgroundColor: "#1976d2", color: "white" }}>
-              <Typography>AI Assistant</Typography>
-              <Button onClick={() => setChatOpen(false)} sx={{ color: "white", fontSize: 12 }}>Close</Button>
-            </Box>
-            <Box sx={{ flex: 1, overflow: "auto", p: 1 }}>
-              <AIAssistant userId={user?.uid} onSend={handleAISummary} onSchedule={handleAppointment} />
-            </Box>
-          </Paper>
-        ) : (
+      <Box
+        sx={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          display: chatOpen ? "flex" : "none",
+          flexDirection: "column",
+          backgroundColor: "background.paper",
+          [theme => theme.breakpoints.up("sm")]: {
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            width: 350,
+            height: 500,
+            borderRadius: 2,
+            boxShadow: 6,
+          }
+        }}
+      >
+        <Box sx={{ p: 1, backgroundColor: "#1976d2", color: "white", display: "flex", justifyContent: "space-between" }}>
+          <Typography>AI Assistant</Typography>
+          <Button onClick={() => setChatOpen(false)} sx={{ color: "white", fontSize: 12 }}>Close</Button>
+        </Box>
+        <Box sx={{ flex: 1, overflow: "auto", p: 1 }}>
+          <AIAssistant userId={user?.uid} onSend={handleAISummary} onSchedule={handleAppointment} />
+        </Box>
+      </Box>
+
+      {!chatOpen && (
+        <Box sx={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999 }}>
           <Button
             variant="contained"
             sx={{ borderRadius: "50%", width: 56, height: 56 }}
@@ -209,8 +227,8 @@ const CustomerDashboard = () => {
           >
             Ask
           </Button>
-        )}
-      </Box>
+        </Box>
+      )}
     </Box>
   );
 };
