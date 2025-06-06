@@ -16,9 +16,10 @@ import {
   signInWithEmailAndPassword,
   saveUserProfile,
   signInWithGoogle,
-  getUserProfile
+  getUserProfile,
+  sendPasswordResetEmail
 } from "../firebase";
-import { sendPasswordResetEmail } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -27,6 +28,8 @@ const Login = () => {
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,8 +43,15 @@ const Login = () => {
           role,
           vehicle: {}
         });
+        navigate("/dashboard");
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        const profile = await getUserProfile(userCred.user.uid);
+        if (!profile?.role) {
+          setMessage("❗ Your role is not assigned. Please contact support.");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (err) {
       console.error("🔴 Auth error:", err.message);
@@ -66,6 +76,8 @@ const Login = () => {
           vehicle: {}
         });
       }
+
+      navigate("/dashboard");
     } catch (err) {
       console.error("🔴 Google sign-in error:", err.message);
       setMessage(err.message);

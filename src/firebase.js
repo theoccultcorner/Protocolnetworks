@@ -1,5 +1,3 @@
-// src/firebase.js
-
 import { initializeApp } from "firebase/app";
 import {
   getFirestore,
@@ -19,7 +17,8 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   onAuthStateChanged,
-  signOut
+  signOut,
+  sendPasswordResetEmail // ✅ Added
 } from "firebase/auth";
 
 // Firebase config
@@ -95,10 +94,11 @@ export {
   db,
   auth,
   signOut,
-  signInWithGoogle, // ✅ Only ONE export here
+  signInWithGoogle,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail, // ✅ Exported here
   collection,
   addDoc,
   getDocs,
