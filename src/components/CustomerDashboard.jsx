@@ -9,12 +9,14 @@ import {
   Stack,
   Divider
 } from "@mui/material";
-import { db, doc, getDoc, setDoc, collection, getDocs } from "../firebase";
+import { auth, db, doc, getDoc, setDoc, collection, getDocs, signOut } from "../firebase"; // ✅ Import signOut
 import AIAssistant from "./AIAssistant";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // ✅ Import navigate
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate(); // ✅ For redirect after logout
   const [customer, setCustomer] = useState({ name: "", phone: "" });
   const [vehicle, setVehicle] = useState({
     make: "",
@@ -60,6 +62,15 @@ const CustomerDashboard = () => {
 
     fetchData();
   }, [user]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/"); // Redirect to login
+    } catch (err) {
+      console.error("❌ Logout failed:", err);
+    }
+  };
 
   const handleCustomerChange = (field) => (e) => {
     setCustomer({ ...customer, [field]: e.target.value });
@@ -129,14 +140,17 @@ const CustomerDashboard = () => {
 
   return (
     <Box sx={{ p: 4 }}>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Welcome, {user?.email}
-        </Typography>
+      <Paper sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="h5">Welcome, {user?.email}</Typography>
+        <Button variant="outlined" onClick={handleLogout}>Logout</Button>
+      </Paper>
+
+      <Paper sx={{ p: 3, mt: 2 }}>
         <Typography variant="subtitle1" gutterBottom>
           Contact & Vehicle Information
         </Typography>
         <Divider sx={{ mb: 2 }} />
+
         {loading ? (
           <Typography>Loading...</Typography>
         ) : editMode ? (
