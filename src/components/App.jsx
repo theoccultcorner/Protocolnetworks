@@ -11,10 +11,10 @@ const AppRoutes = () => {
 
   console.log("DEBUG →", { user, role, loading });
 
-  // ✅ Wait for Firebase to finish checking login state
+  // ✅ 1. Show loading screen while checking auth state
   if (loading) return <LoadingScreen />;
 
-  // ✅ If no user is signed in
+  // ✅ 2. If not logged in, show login page for all routes
   if (!user) {
     return (
       <Routes>
@@ -23,38 +23,43 @@ const AppRoutes = () => {
     );
   }
 
-  // ✅ If user is logged in, route by role
+  // ✅ 3. Logged in but no role assigned (shouldn't happen, but safe fallback)
+  if (!role) {
+    return (
+      <Routes>
+        <Route
+          path="*"
+          element={
+            <div style={{ textAlign: "center", marginTop: "2rem" }}>
+              ⚠️ No role assigned. Please contact support.
+            </div>
+          }
+        />
+      </Routes>
+    );
+  }
+
+  // ✅ 4. Customer routes
   if (role === "customer") {
     return (
       <Routes>
-        <Route path="/" element={<CustomerDashboard />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/dashboard" element={<CustomerDashboard />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     );
   }
 
+  // ✅ 5. Mechanic routes
   if (role === "mechanic") {
     return (
       <Routes>
-        <Route path="/" element={<MechanicDashboard />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/mechanic-dashboard" element={<MechanicDashboard />} />
+        <Route path="*" element={<Navigate to="/mechanic-dashboard" />} />
       </Routes>
     );
   }
 
-  // ✅ If user is logged in but role is not assigned yet
-  return (
-    <Routes>
-      <Route
-        path="*"
-        element={
-          <div style={{ textAlign: "center", marginTop: "2rem" }}>
-            ⚠️ No role assigned. Please contact support.
-          </div>
-        }
-      />
-    </Routes>
-  );
+  return null;
 };
 
 export default AppRoutes;

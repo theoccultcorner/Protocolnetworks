@@ -43,14 +43,27 @@ const Login = () => {
           role,
           vehicle: {}
         });
-        navigate("/dashboard");
+
+        // ✅ Redirect based on role after signup
+        if (role === "mechanic") {
+          navigate("/mechanic-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+
       } else {
         const userCred = await signInWithEmailAndPassword(auth, email, password);
         const profile = await getUserProfile(userCred.user.uid);
+
         if (!profile?.role) {
           setMessage("❗ Your role is not assigned. Please contact support.");
         } else {
-          navigate("/dashboard");
+          // ✅ Redirect based on stored role
+          if (profile.role === "mechanic") {
+            navigate("/mechanic-dashboard");
+          } else {
+            navigate("/dashboard");
+          }
         }
       }
     } catch (err) {
@@ -70,14 +83,21 @@ const Login = () => {
 
       const existing = await getUserProfile(user.uid);
       if (!existing) {
+        // Default to customer if first time
         await saveUserProfile(user.uid, {
           email: user.email,
           role: "customer",
           vehicle: {}
         });
+        navigate("/dashboard");
+      } else {
+        // Redirect based on existing role
+        if (existing.role === "mechanic") {
+          navigate("/mechanic-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       }
-
-      navigate("/dashboard");
     } catch (err) {
       console.error("🔴 Google sign-in error:", err.message);
       setMessage(err.message);
