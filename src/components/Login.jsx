@@ -15,12 +15,22 @@ import {
   signInWithEmailAndPassword,
   saveUserProfile,
   signInWithGoogle,
-  getUserProfile,
   sendPasswordResetEmail
 } from "../firebase";
 import { useNavigate } from "react-router-dom";
 
+// Mechanic's email (only this user gets mechanic access)
 const MECHANIC_EMAIL = "protocolnetwork18052687686@gmail.com";
+
+// Utility to assign role based on email
+const assignRole = (email) =>
+  email.trim().toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
+
+// Utility to redirect based on email
+const redirectByRole = (email, navigate) => {
+  const role = assignRole(email);
+  navigate(role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
+};
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -31,72 +41,66 @@ const Login = () => {
 
   const navigate = useNavigate();
 
-  const assignRole = (email) => {
-    return email.trim().toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("");
+    setLoading(true);
 
-  const redirectByRole = (email) => {
-    const role = assignRole(email);
-    navigate(role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
-  };
+    try {
+      if (isSignup) {
+        // Sign up with email/password
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        const userEmail = userCred.user.email;
+        const role = assignRole(userEmail);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setMessage("");
-  setLoading(true);
+        // Save profile with forced role
+        await saveUserProfile(userCred.user.uid, {
+          email: userEmail,
+          role,
+          vehicle: {}
+        });
 
-  try {
-    if (isSignup) {
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
-      const userEmail = userCred.user.email;
-      const role = assignRole(userEmail);
+        redirectByRole(userEmail, navigate);
+      } else {
+        // Sign in with email/password
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        const userEmail = userCred.user.email;
+        const role = assignRole(userEmail);
 
-      await saveUserProfile(userCred.user.uid, {
-        email: userEmail,
-        role,
-        vehicle: {}
-      });
+        // Force role correction in Firestore just in case
+        await saveUserProfile(userCred.user.uid, {
+          email: userEmail,
+          role
+        });
 
-      redirectByRole(userEmail);
-    } else {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
-      const userEmail = userCred.user.email;
-      const role = assignRole(userEmail);
-
-      // ✅ FORCE SAVE ROLE AGAIN during login (just to fix any bad/missing data)
-      await saveUserProfile(userCred.user.uid, {
-        email: userEmail,
-        role
-      });
-
-      redirectByRole(userEmail);
+        redirectByRole(userEmail, navigate);
+      }
+    } catch (err) {
+      console.error("🔴 Auth error:", err.message);
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("🔴 Auth error:", err.message);
-    setMessage(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setMessage("");
+
     try {
       const result = await signInWithGoogle();
       const { user } = result;
       const userEmail = user.email;
-
       const role = assignRole(userEmail);
 
+      // Save profile with forced role
       await saveUserProfile(user.uid, {
         email: userEmail,
         role,
         vehicle: {}
       });
 
-      redirectByRole(userEmail);
+      redirectByRole(userEmail, navigate);
     } catch (err) {
       console.error("🔴 Google sign-in error:", err.message);
       setMessage(err.message);

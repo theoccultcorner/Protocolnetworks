@@ -1,7 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { auth, onAuthStateChanged, getUserProfile } from "../firebase";
+import { auth, onAuthStateChanged } from "../firebase";
 
 const AuthContext = createContext();
+
+const MECHANIC_EMAIL = "protocolnetwork18052687686@gmail.com";
+
+// Force role based on email every time
+const assignRole = (email) =>
+  email?.trim().toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -17,17 +23,10 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      try {
-        const profile = await getUserProfile(firebaseUser.uid);
-        setUser(firebaseUser);
-        setRole(profile?.role || null);
-      } catch (err) {
-        console.error("❌ Failed to load user profile:", err);
-        setUser(null);
-        setRole(null);
-      } finally {
-        setLoading(false);
-      }
+      const userEmail = firebaseUser.email;
+      setUser(firebaseUser);
+      setRole(assignRole(userEmail)); // ✅ Force role by email
+      setLoading(false);
     });
 
     return () => unsubscribe();
