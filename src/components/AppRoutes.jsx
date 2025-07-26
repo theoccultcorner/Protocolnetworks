@@ -6,15 +6,20 @@ import CustomerDashboard from "./CustomerDashboard";
 import MechanicDashboard from "./MechanicDashboard";
 import LoadingScreen from "./LoadingScreen";
 
+// Only mechanic account
+const MECHANIC_EMAIL = "protocolnetwork18052687686@gmail.com";
+
+// Assign role based on email
+const assignRole = (email) =>
+  email?.trim().toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
+
 const AppRoutes = () => {
-  const { user, role, loading } = useAuth();
+  const { user, loading } = useAuth();
 
-  console.log("DEBUG →", { user, role, loading });
+  // Show loading spinner while checking auth
+  if (loading) return <LoadingScreen />;
 
-  // ✅ ONLY show loading screen if user exists and we're still fetching their profile
-  if (loading && user !== null) return <LoadingScreen />;
-
-  // ✅ No user? Show login immediately
+  // Not logged in — show login for any route
   if (!user) {
     return (
       <Routes>
@@ -23,31 +28,27 @@ const AppRoutes = () => {
     );
   }
 
-  // ✅ Logged in: route by role
+  // Debug print to confirm correct user
+  console.log("🔍 Logged in as:", user.email);
+
+  const role = assignRole(user.email);
+  console.log("🧠 Assigned role:", role);
+
+  // Mechanic route
+  if (role === "mechanic") {
+    return (
+      <Routes>
+        <Route path="/mechanic-dashboard" element={<MechanicDashboard />} />
+        <Route path="*" element={<Navigate to="/mechanic-dashboard" />} />
+      </Routes>
+    );
+  }
+
+  // Default to customer
   return (
     <Routes>
-      {role === "customer" && (
-        <>
-          <Route path="/" element={<CustomerDashboard />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </>
-      )}
-      {role === "mechanic" && (
-        <>
-          <Route path="/" element={<MechanicDashboard />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </>
-      )}
-      {!role && (
-        <Route
-          path="*"
-          element={
-            <div style={{ textAlign: "center", marginTop: "2rem" }}>
-              ⚠️ No role assigned. Please contact support.
-            </div>
-          }
-        />
-      )}
+      <Route path="/dashboard" element={<CustomerDashboard />} />
+      <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
   );
 };
