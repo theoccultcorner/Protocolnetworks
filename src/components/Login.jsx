@@ -20,6 +20,8 @@ import {
 } from "../firebase";
 import { useNavigate } from "react-router-dom";
 
+const MECHANIC_EMAIL = "protocolnetwork18052687686@gmail.com";
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +31,18 @@ const Login = () => {
 
   const navigate = useNavigate();
 
+  const assignRole = (email) => {
+    return email.toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
+  };
+
+  const redirectByRole = (role) => {
+    if (role === "mechanic") {
+      navigate("/mechanic-dashboard");
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -37,16 +51,15 @@ const Login = () => {
       if (isSignup) {
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         const userEmail = userCred.user.email;
-
-        const assignedRole = userEmail === "protocolnetwork18052687686@gmail.com" ? "mechanic" : "customer";
+        const role = assignRole(userEmail);
 
         await saveUserProfile(userCred.user.uid, {
           email: userEmail,
-          role: assignedRole,
+          role,
           vehicle: {}
         });
 
-        navigate(assignedRole === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
+        redirectByRole(role);
       } else {
         const userCred = await signInWithEmailAndPassword(auth, email, password);
         const profile = await getUserProfile(userCred.user.uid);
@@ -54,7 +67,7 @@ const Login = () => {
         if (!profile?.role) {
           setMessage("❗ Your role is not assigned. Please contact support.");
         } else {
-          navigate(profile.role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
+          redirectByRole(profile.role);
         }
       }
     } catch (err) {
@@ -74,15 +87,15 @@ const Login = () => {
 
       const existing = await getUserProfile(user.uid);
       if (!existing) {
-        const assignedRole = user.email === "protocolnetwork18052687686@gmail.com" ? "mechanic" : "customer";
+        const role = assignRole(user.email);
         await saveUserProfile(user.uid, {
           email: user.email,
-          role: assignedRole,
+          role,
           vehicle: {}
         });
-        navigate(assignedRole === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
+        redirectByRole(role);
       } else {
-        navigate(existing.role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
+        redirectByRole(existing.role);
       }
     } catch (err) {
       console.error("🔴 Google sign-in error:", err.message);
