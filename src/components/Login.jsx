@@ -40,45 +40,45 @@ const Login = () => {
     navigate(role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
-    setLoading(true);
-    try {
-      if (isSignup) {
-        const userCred = await createUserWithEmailAndPassword(auth, email, password);
-        const userEmail = userCred.user.email;
-        const role = assignRole(userEmail);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setMessage("");
+  setLoading(true);
 
-        await saveUserProfile(userCred.user.uid, {
-          email: userEmail,
-          role,
-          vehicle: {}
-        });
+  try {
+    if (isSignup) {
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      const userEmail = userCred.user.email;
+      const role = assignRole(userEmail);
 
-        redirectByRole(userEmail);
-      } else {
-        const userCred = await signInWithEmailAndPassword(auth, email, password);
-        const userEmail = userCred.user.email;
+      await saveUserProfile(userCred.user.uid, {
+        email: userEmail,
+        role,
+        vehicle: {}
+      });
 
-        // Regardless of Firestore, override with correct role:
-        const role = assignRole(userEmail);
+      redirectByRole(userEmail);
+    } else {
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const userEmail = userCred.user.email;
+      const role = assignRole(userEmail);
 
-        // Optional: force correct role in Firestore
-        await saveUserProfile(userCred.user.uid, {
-          email: userEmail,
-          role,
-        });
+      // ✅ FORCE SAVE ROLE AGAIN during login (just to fix any bad/missing data)
+      await saveUserProfile(userCred.user.uid, {
+        email: userEmail,
+        role
+      });
 
-        redirectByRole(userEmail);
-      }
-    } catch (err) {
-      console.error("🔴 Auth error:", err.message);
-      setMessage(err.message);
-    } finally {
-      setLoading(false);
+      redirectByRole(userEmail);
     }
-  };
+  } catch (err) {
+    console.error("🔴 Auth error:", err.message);
+    setMessage(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
