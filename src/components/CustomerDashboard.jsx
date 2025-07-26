@@ -7,16 +7,28 @@ import {
   TextField,
   Button,
   Stack,
-  Divider
+  Divider,
+  Grid,
+  useMediaQuery
 } from "@mui/material";
-import { auth, db, doc, getDoc, setDoc, collection, getDocs, signOut } from "../firebase"; // ✅ Import signOut
+import {
+  auth,
+  db,
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  getDocs,
+  signOut
+} from "../firebase";
 import AIAssistant from "./AIAssistant";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // ✅ Import navigate
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate(); // ✅ For redirect after logout
+  const navigate = useNavigate();
   const [customer, setCustomer] = useState({ name: "", phone: "" });
   const [vehicle, setVehicle] = useState({
     make: "",
@@ -31,6 +43,9 @@ const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +81,7 @@ const CustomerDashboard = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate("/"); // Redirect to login
+      navigate("/");
     } catch (err) {
       console.error("❌ Logout failed:", err);
     }
@@ -139,10 +154,10 @@ const CustomerDashboard = () => {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Paper sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="h5">Welcome, {user?.email}</Typography>
-        <Button variant="outlined" onClick={handleLogout}>Logout</Button>
+    <Box sx={{ p: isMobile ? 2 : 4 }}>
+      <Paper sx={{ p: 3, display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center" }}>
+        <Typography variant="h6" sx={{ mb: isMobile ? 1 : 0 }}>Welcome, {user?.email}</Typography>
+        <Button variant="outlined" fullWidth={isMobile} onClick={handleLogout}>Logout</Button>
       </Paper>
 
       <Paper sx={{ p: 3, mt: 2 }}>
@@ -164,7 +179,7 @@ const CustomerDashboard = () => {
             <TextField label="Model" value={vehicle.model} onChange={handleVehicleChange("model")} fullWidth />
             <TextField label="Year" value={vehicle.year} onChange={handleVehicleChange("year")} fullWidth />
             <TextField label="Mileage" value={vehicle.mileage || ""} onChange={handleVehicleChange("mileage")} fullWidth />
-            <TextField label="Issues" value={vehicle.issues || ""} onChange={handleVehicleChange("issues")} fullWidth />
+            <TextField label="Issues" value={vehicle.issues || ""} onChange={handleVehicleChange("issues")} fullWidth multiline rows={2} />
             <Button variant="contained" onClick={handleSave}>Save Info</Button>
           </Stack>
         ) : (
@@ -180,7 +195,7 @@ const CustomerDashboard = () => {
             <Typography sx={{ whiteSpace: "pre-wrap", mt: 1 }}>
               <strong>Issues:</strong> {vehicle.issues?.trim() || "None listed"}
             </Typography>
-            <Button sx={{ mt: 2 }} variant="outlined" onClick={() => setEditMode(true)}>
+            <Button sx={{ mt: 2 }} variant="outlined" fullWidth={isMobile} onClick={() => setEditMode(true)}>
               Edit Info
             </Button>
           </Box>
@@ -204,6 +219,7 @@ const CustomerDashboard = () => {
         )}
       </Box>
 
+      {/* AI Chat assistant */}
       <Box
         sx={{
           position: "fixed",
@@ -212,15 +228,17 @@ const CustomerDashboard = () => {
           display: chatOpen ? "flex" : "none",
           flexDirection: "column",
           backgroundColor: "background.paper",
-          [theme => theme.breakpoints.up("sm")]: {
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            width: 350,
-            height: 500,
-            borderRadius: 2,
-            boxShadow: 6,
-          }
+          ...(isMobile
+            ? {}
+            : {
+                bottom: 24,
+                right: 24,
+                width: 350,
+                height: 500,
+                borderRadius: 2,
+                boxShadow: 6,
+                inset: "auto"
+              })
         }}
       >
         <Box sx={{ p: 1, backgroundColor: "#1976d2", color: "white", display: "flex", justifyContent: "space-between" }}>
