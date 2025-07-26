@@ -32,15 +32,12 @@ const Login = () => {
   const navigate = useNavigate();
 
   const assignRole = (email) => {
-    return email.toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
+    return email.trim().toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
   };
 
-  const redirectByRole = (role) => {
-    if (role === "mechanic") {
-      navigate("/mechanic-dashboard");
-    } else {
-      navigate("/dashboard");
-    }
+  const redirectByRole = (email) => {
+    const role = assignRole(email);
+    navigate(role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
   };
 
   const handleSubmit = async (e) => {
@@ -59,16 +56,21 @@ const Login = () => {
           vehicle: {}
         });
 
-        redirectByRole(role);
+        redirectByRole(userEmail);
       } else {
         const userCred = await signInWithEmailAndPassword(auth, email, password);
-        const profile = await getUserProfile(userCred.user.uid);
+        const userEmail = userCred.user.email;
 
-        if (!profile?.role) {
-          setMessage("❗ Your role is not assigned. Please contact support.");
-        } else {
-          redirectByRole(profile.role);
-        }
+        // Regardless of Firestore, override with correct role:
+        const role = assignRole(userEmail);
+
+        // Optional: force correct role in Firestore
+        await saveUserProfile(userCred.user.uid, {
+          email: userEmail,
+          role,
+        });
+
+        redirectByRole(userEmail);
       }
     } catch (err) {
       console.error("🔴 Auth error:", err.message);
@@ -84,19 +86,17 @@ const Login = () => {
     try {
       const result = await signInWithGoogle();
       const { user } = result;
+      const userEmail = user.email;
 
-      const existing = await getUserProfile(user.uid);
-      if (!existing) {
-        const role = assignRole(user.email);
-        await saveUserProfile(user.uid, {
-          email: user.email,
-          role,
-          vehicle: {}
-        });
-        redirectByRole(role);
-      } else {
-        redirectByRole(existing.role);
-      }
+      const role = assignRole(userEmail);
+
+      await saveUserProfile(user.uid, {
+        email: userEmail,
+        role,
+        vehicle: {}
+      });
+
+      redirectByRole(userEmail);
     } catch (err) {
       console.error("🔴 Google sign-in error:", err.message);
       setMessage(err.message);
