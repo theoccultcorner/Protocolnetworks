@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
       if (!firebaseUser) {
         setUser(null);
         setRole(null);
-        setLoading(false); // ✅ Finish loading if no user
+        setLoading(false);
         return;
       }
 
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setRole(null);
       } finally {
-        setLoading(false); // ✅ Finish loading after user/profile check
+        setLoading(false);
       }
     });
 

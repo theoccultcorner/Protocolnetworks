@@ -4,7 +4,6 @@ import {
   Button,
   Paper,
   Typography,
-  MenuItem,
   Stack,
   Box,
   Divider,
@@ -24,7 +23,6 @@ import { useNavigate } from "react-router-dom";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("customer");
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -38,19 +36,17 @@ const Login = () => {
     try {
       if (isSignup) {
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        const userEmail = userCred.user.email;
+
+        const assignedRole = userEmail === "protocolnetwork18052687686@gmail.com" ? "mechanic" : "customer";
+
         await saveUserProfile(userCred.user.uid, {
-          email,
-          role,
+          email: userEmail,
+          role: assignedRole,
           vehicle: {}
         });
 
-        // ✅ Redirect based on role after signup
-        if (role === "mechanic") {
-          navigate("/mechanic-dashboard");
-        } else {
-          navigate("/dashboard");
-        }
-
+        navigate(assignedRole === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
       } else {
         const userCred = await signInWithEmailAndPassword(auth, email, password);
         const profile = await getUserProfile(userCred.user.uid);
@@ -58,12 +54,7 @@ const Login = () => {
         if (!profile?.role) {
           setMessage("❗ Your role is not assigned. Please contact support.");
         } else {
-          // ✅ Redirect based on stored role
-          if (profile.role === "mechanic") {
-            navigate("/mechanic-dashboard");
-          } else {
-            navigate("/dashboard");
-          }
+          navigate(profile.role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
         }
       }
     } catch (err) {
@@ -83,20 +74,15 @@ const Login = () => {
 
       const existing = await getUserProfile(user.uid);
       if (!existing) {
-        // Default to customer if first time
+        const assignedRole = user.email === "protocolnetwork18052687686@gmail.com" ? "mechanic" : "customer";
         await saveUserProfile(user.uid, {
           email: user.email,
-          role: "customer",
+          role: assignedRole,
           vehicle: {}
         });
-        navigate("/dashboard");
+        navigate(assignedRole === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
       } else {
-        // Redirect based on existing role
-        if (existing.role === "mechanic") {
-          navigate("/mechanic-dashboard");
-        } else {
-          navigate("/dashboard");
-        }
+        navigate(existing.role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
       }
     } catch (err) {
       console.error("🔴 Google sign-in error:", err.message);
@@ -164,19 +150,6 @@ const Login = () => {
               >
                 Forgot password?
               </Button>
-            )}
-
-            {isSignup && (
-              <TextField
-                label="Role"
-                select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                fullWidth
-              >
-                <MenuItem value="customer">Customer</MenuItem>
-                <MenuItem value="mechanic">Mechanic</MenuItem>
-              </TextField>
             )}
 
             <Button type="submit" variant="contained" disabled={loading}>
