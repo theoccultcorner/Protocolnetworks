@@ -6,15 +6,18 @@ import CustomerDashboard from "./CustomerDashboard";
 import MechanicDashboard from "./MechanicDashboard";
 import LoadingScreen from "./LoadingScreen";
 
+// Define the only mechanic email
+const MECHANIC_EMAIL = "protocolnetwork18052687686@gmail.com";
+
+// Force role assignment based on email
+const assignRole = (email) =>
+  email?.trim().toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
+
 const AppRoutes = () => {
-  const { user, role, loading } = useAuth();
+  const { user, loading } = useAuth();
 
-  console.log("DEBUG →", { user, role, loading });
-
-  // ✅ 1. Show loading screen while checking auth state
   if (loading) return <LoadingScreen />;
 
-  // ✅ 2. If not logged in, show login page for all routes
   if (!user) {
     return (
       <Routes>
@@ -23,23 +26,9 @@ const AppRoutes = () => {
     );
   }
 
-  // ✅ 3. Logged in but no role assigned (shouldn't happen, but safe fallback)
-  if (!role) {
-    return (
-      <Routes>
-        <Route
-          path="*"
-          element={
-            <div style={{ textAlign: "center", marginTop: "2rem" }}>
-              ⚠️ No role assigned. Please contact support.
-            </div>
-          }
-        />
-      </Routes>
-    );
-  }
+  const role = assignRole(user.email); // ✅ always determine role based on email
 
-  // ✅ 4. Customer routes
+  // Customer routes
   if (role === "customer") {
     return (
       <Routes>
@@ -49,7 +38,7 @@ const AppRoutes = () => {
     );
   }
 
-  // ✅ 5. Mechanic routes
+  // Mechanic routes
   if (role === "mechanic") {
     return (
       <Routes>
@@ -59,7 +48,12 @@ const AppRoutes = () => {
     );
   }
 
-  return null;
+  // Should never happen
+  return (
+    <div style={{ textAlign: "center", marginTop: "2rem" }}>
+      ❌ Unknown user role. Please contact support.
+    </div>
+  );
 };
 
 export default AppRoutes;

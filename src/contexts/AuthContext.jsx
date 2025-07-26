@@ -5,7 +5,7 @@ const AuthContext = createContext();
 
 const MECHANIC_EMAIL = "protocolnetwork18052687686@gmail.com";
 
-// Force role based on email every time
+// Force role based on email
 const assignRole = (email) =>
   email?.trim().toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
 
@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (!firebaseUser) {
         setUser(null);
         setRole(null);
@@ -23,9 +23,8 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      const userEmail = firebaseUser.email;
       setUser(firebaseUser);
-      setRole(assignRole(userEmail)); // ✅ Force role by email
+      setRole(assignRole(firebaseUser.email)); // ✅ always force role from email
       setLoading(false);
     });
 

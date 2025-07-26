@@ -19,14 +19,14 @@ import {
 } from "../firebase";
 import { useNavigate } from "react-router-dom";
 
-// Mechanic's email (only this user gets mechanic access)
+// Define mechanic email
 const MECHANIC_EMAIL = "protocolnetwork18052687686@gmail.com";
 
-// Utility to assign role based on email
+// Assign role based on email
 const assignRole = (email) =>
   email.trim().toLowerCase() === MECHANIC_EMAIL ? "mechanic" : "customer";
 
-// Utility to redirect based on email
+// Redirect to appropriate dashboard
 const redirectByRole = (email, navigate) => {
   const role = assignRole(email);
   navigate(role === "mechanic" ? "/mechanic-dashboard" : "/dashboard");
@@ -48,12 +48,10 @@ const Login = () => {
 
     try {
       if (isSignup) {
-        // Sign up with email/password
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         const userEmail = userCred.user.email;
         const role = assignRole(userEmail);
 
-        // Save profile with forced role
         await saveUserProfile(userCred.user.uid, {
           email: userEmail,
           role,
@@ -62,12 +60,10 @@ const Login = () => {
 
         redirectByRole(userEmail, navigate);
       } else {
-        // Sign in with email/password
         const userCred = await signInWithEmailAndPassword(auth, email, password);
         const userEmail = userCred.user.email;
         const role = assignRole(userEmail);
 
-        // Force role correction in Firestore just in case
         await saveUserProfile(userCred.user.uid, {
           email: userEmail,
           role
@@ -93,7 +89,6 @@ const Login = () => {
       const userEmail = user.email;
       const role = assignRole(userEmail);
 
-      // Save profile with forced role
       await saveUserProfile(user.uid, {
         email: userEmail,
         role,
