@@ -1,55 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import {
   Box,
   Typography,
   Paper,
-  TextField,
-  Button,
   Stack,
   Divider
 } from "@mui/material";
-import { db, doc, getDoc, setDoc, collection, getDocs } from "../firebase";
-import AIAssistant from "./AIAssistant";
-import axios from "axios";
+import { db, collection, getDocs } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
 
-const CustomerDashboard = () => {
+const MechanicDashboard = () => {
   const { user } = useAuth();
-  const [customer, setCustomer] = useState({ name: "", phone: "" });
-  const [vehicle, setVehicle] = useState({
-    make: "",
-    model: "",
-    year: "",
-    vin: "",
-    plate: "",
-    mileage: "",
-    issues: ""
-  });
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editMode, setEditMode] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.uid) return;
-
+    const fetchAppointments = async () => {
       try {
-        const docRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(docRef);
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setCustomer({ name: data.name || "", phone: data.phone || "" });
-          setVehicle(data.vehicle || {});
-          if (!(data.vehicle?.make && data.vehicle?.model)) setEditMode(true);
-        } else {
-          setEditMode(true);
-        }
-
         const apptSnap = await getDocs(collection(db, "appointments"));
-        const apptList = apptSnap.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .filter((a) => a.userId === user.uid);
+        const apptList = apptSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data()
+        }));
         setAppointments(apptList);
       } catch (error) {
         console.error("❌ Failed to fetch data:", error);
@@ -58,179 +30,53 @@ const CustomerDashboard = () => {
       }
     };
 
-    fetchData();
-  }, [user]);
-
-  const handleCustomerChange = (field) => (e) => {
-    setCustomer({ ...customer, [field]: e.target.value });
-  };
-
-  const handleVehicleChange = (field) => (e) => {
-    setVehicle({ ...vehicle, [field]: e.target.value });
-  };
-
-  const handleSave = async () => {
-    if (!user?.uid) return;
-    try {
-      await setDoc(doc(db, "users", user.uid), {
-        name: customer.name,
-        phone: customer.phone,
-        vehicle
-      }, { merge: true });
-      setEditMode(false);
-    } catch (error) {
-      console.error("❌ Error saving user info:", error);
-    }
-  };
-
-  const handleAISummary = async (summary) => {
-    if (!user?.uid) return;
-    const updatedVehicle = { ...vehicle, issues: summary };
-    setVehicle(updatedVehicle);
-    await setDoc(doc(db, "users", user.uid), { vehicle: updatedVehicle }, { merge: true });
-  };
-
-  const handleAppointment = async ({ date, time, reason }) => {
-    if (!user?.uid || !reason) return;
-
-    const apptData = {
-      userId: user.uid,
-      name: customer.name,
-      phone: customer.phone,
-      vehicle,
-      date,
-      time,
-      reason,
-      timestamp: new Date().toISOString()
-    };
-
-    try {
-      const docRef = doc(db, "appointments", `${user.uid}-${Date.now()}`);
-      await setDoc(docRef, apptData);
-      setAppointments((prev) => [...prev, { id: docRef.id, ...apptData }]);
-    } catch (error) {
-      console.error("❌ Error saving appointment:", error);
-    }
-  };
-
-  const handleVinLookup = async () => {
-    if (!vehicle.vin) return;
-    try {
-      const response = await axios.get(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vehicle.vin}?format=json`);
-      const data = response.data.Results;
-      const year = data.find((d) => d.Variable === "Model Year")?.Value;
-      const make = data.find((d) => d.Variable === "Make")?.Value;
-      const model = data.find((d) => d.Variable === "Model")?.Value;
-      setVehicle((prev) => ({ ...prev, year, make, model }));
-    } catch (err) {
-      console.error("❌ VIN lookup failed:", err);
-    }
-  };
+    fetchAppointments();
+  }, []);
 
   return (
     <Box sx={{ p: 4 }}>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Welcome, {user?.email}
-        </Typography>
-        <Typography variant="subtitle1" gutterBottom>
-          Contact & Vehicle Information
-        </Typography>
-        <Divider sx={{ mb: 2 }} />
-        {loading ? (
-          <Typography>Loading...</Typography>
-        ) : editMode ? (
-          <Stack spacing={2}>
-            <TextField label="Name" value={customer.name} onChange={handleCustomerChange("name")} fullWidth />
-            <TextField label="Phone" value={customer.phone} onChange={handleCustomerChange("phone")} fullWidth />
-            <TextField label="License Plate" value={vehicle.plate} onChange={handleVehicleChange("plate")} fullWidth />
-            <TextField label="VIN" value={vehicle.vin} onChange={handleVehicleChange("vin")} fullWidth />
-            <Button variant="outlined" onClick={handleVinLookup}>Lookup VIN</Button>
-            <TextField label="Make" value={vehicle.make} onChange={handleVehicleChange("make")} fullWidth />
-            <TextField label="Model" value={vehicle.model} onChange={handleVehicleChange("model")} fullWidth />
-            <TextField label="Year" value={vehicle.year} onChange={handleVehicleChange("year")} fullWidth />
-            <TextField label="Mileage" value={vehicle.mileage || ""} onChange={handleVehicleChange("mileage")} fullWidth />
-            <TextField label="Issues" value={vehicle.issues || ""} onChange={handleVehicleChange("issues")} fullWidth />
-            <Button variant="contained" onClick={handleSave}>Save Info</Button>
-          </Stack>
-        ) : (
-          <Box>
-            <Typography><strong>Name:</strong> {customer.name || "N/A"}</Typography>
-            <Typography><strong>Phone:</strong> {customer.phone || "N/A"}</Typography>
-            <Typography><strong>License Plate:</strong> {vehicle.plate || "N/A"}</Typography>
-            <Typography><strong>VIN:</strong> {vehicle.vin || "N/A"}</Typography>
-            <Typography><strong>Make:</strong> {vehicle.make || "N/A"}</Typography>
-            <Typography><strong>Model:</strong> {vehicle.model || "N/A"}</Typography>
-            <Typography><strong>Year:</strong> {vehicle.year || "N/A"}</Typography>
-            <Typography><strong>Mileage:</strong> {vehicle.mileage || "N/A"}</Typography>
-            <Typography sx={{ whiteSpace: "pre-wrap", mt: 1 }}>
-              <strong>Issues:</strong> {vehicle.issues?.trim() || "None listed"}
-            </Typography>
-            <Button sx={{ mt: 2 }} variant="outlined" onClick={() => setEditMode(true)}>
-              Edit Info
-            </Button>
-          </Box>
-        )}
-      </Paper>
+      <Typography variant="h4" gutterBottom>
+        Mechanic Dashboard
+      </Typography>
 
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" gutterBottom>Your Appointments</Typography>
-        {appointments.length === 0 ? (
-          <Typography>No appointments yet.</Typography>
-        ) : (
-          <Stack spacing={2}>
-            {appointments.map((appt) => (
-              <Paper key={appt.id} sx={{ p: 2 }}>
-                <Typography><strong>Date:</strong> {appt.date}</Typography>
-                <Typography><strong>Time:</strong> {appt.time}</Typography>
-                <Typography><strong>Reason:</strong> {appt.reason}</Typography>
-              </Paper>
-            ))}
-          </Stack>
-        )}
-      </Box>
+      {loading ? (
+        <Typography>Loading appointments...</Typography>
+      ) : appointments.length === 0 ? (
+        <Typography>No appointments found.</Typography>
+      ) : (
+        <Stack spacing={3}>
+          {appointments.map((appt) => (
+            <Paper key={appt.id} sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Customer: {appt.name || "N/A"} ({appt.phone || "N/A"})
+              </Typography>
 
-      <Box
-        sx={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 9999,
-          display: chatOpen ? "flex" : "none",
-          flexDirection: "column",
-          backgroundColor: "background.paper",
-          [theme => theme.breakpoints.up("sm")]: {
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            width: 350,
-            height: 500,
-            borderRadius: 2,
-            boxShadow: 6,
-          }
-        }}
-      >
-        <Box sx={{ p: 1, backgroundColor: "#1976d2", color: "white", display: "flex", justifyContent: "space-between" }}>
-          <Typography>AI Assistant</Typography>
-          <Button onClick={() => setChatOpen(false)} sx={{ color: "white", fontSize: 12 }}>Close</Button>
-        </Box>
-        <Box sx={{ flex: 1, overflow: "auto", p: 1 }}>
-          <AIAssistant userId={user?.uid} onSend={handleAISummary} onSchedule={handleAppointment} />
-        </Box>
-      </Box>
+              <Divider sx={{ mb: 2 }} />
 
-      {!chatOpen && (
-        <Box sx={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999 }}>
-          <Button
-            variant="contained"
-            sx={{ borderRadius: "50%", width: 56, height: 56 }}
-            onClick={() => setChatOpen(true)}
-          >
-            Ask
-          </Button>
-        </Box>
+              <Typography><strong>Date:</strong> {appt.date || "N/A"}</Typography>
+              <Typography><strong>Time:</strong> {appt.time || "N/A"}</Typography>
+              <Typography><strong>Reason:</strong> {appt.reason || "N/A"}</Typography>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Typography variant="subtitle1" gutterBottom>
+                Vehicle Information:
+              </Typography>
+              <Typography><strong>Make:</strong> {appt.vehicle?.make || "N/A"}</Typography>
+              <Typography><strong>Model:</strong> {appt.vehicle?.model || "N/A"}</Typography>
+              <Typography><strong>Year:</strong> {appt.vehicle?.year || "N/A"}</Typography>
+              <Typography><strong>VIN:</strong> {appt.vehicle?.vin || "N/A"}</Typography>
+              <Typography><strong>License Plate:</strong> {appt.vehicle?.plate || "N/A"}</Typography>
+              <Typography><strong>Mileage:</strong> {appt.vehicle?.mileage || "N/A"}</Typography>
+              <Typography sx={{ whiteSpace: "pre-wrap", mt: 1 }}>
+                <strong>Issues:</strong> {appt.vehicle?.issues?.trim() || "None listed"}
+              </Typography>
+            </Paper>
+          ))}
+        </Stack>
       )}
     </Box>
   );
 };
 
-export default CustomerDashboard;
+export default MechanicDashboard;
